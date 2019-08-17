@@ -1,0 +1,10 @@
+arm_crossing
+get-up
+jumping
+kicking
+picking up
+sit-down
+throwing
+turning around
+walking
+waving
