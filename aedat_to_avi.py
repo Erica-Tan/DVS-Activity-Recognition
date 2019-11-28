@@ -4,7 +4,7 @@ import math
 import cv2
 import numpy as np
 import argparse
-import dvsproc
+import utils.dvsproc as dvsproc
 import h5py
 import glob
 
@@ -130,23 +130,23 @@ if __name__ == '__main__':
     # parse the command line argument
     parser = argparse.ArgumentParser(description='create dataset.')
     parser.add_argument('--data_path', 
-                    default='/media/imagr/Data/AEDAT/dataset/ActionRecognition',
+                    default='../dataset/ActionRecognition',
                     help='The .aedat file dir.')
-    parser.add_argument('--save_path', 
-                    default='/media/imagr/Data/AEDAT/dataset/ActionRecognition',
-                    help='The hdf5 save path.')
+    # parser.add_argument('--save_path', 
+    #                 default='/media/imagr/Data/Projects/AEDAT/dataset/ActionRecognition',
+    #                 help='The hdf5 save path.')
     parser.add_argument('--video_path', 
-                default='/media/imagr/Data/AEDAT/dataset/ActionRecognitionAVI1',
+                default='../dataset/ActionRecognitionAVI',
                 help='The hdf5 save path.')
-    parser.add_argument('--db_name', 
-                    default='data',
-                    help='The hdf5 file name.')
+    # parser.add_argument('--db_name', 
+    #                 default='data',
+    #                 help='The hdf5 file name.')
     args = parser.parse_args()
 
     data_path = args.data_path
-    save_path = args.save_path
+    # save_path = args.save_path
     video_path = args.video_path
-    db_name = args.db_name
+    # db_name = args.db_name
 
     num_frames = 36
 
@@ -161,12 +161,7 @@ if __name__ == '__main__':
     # database.attrs["width"] = 260
     # database.attrs["height"] = 346
 
-
-    num = 1
     for root, dirnames, filenames in os.walk(data_path):
-        if num == 1:
-            num += 1
-            continue
 
         for filename in filenames:
             vid_n, vid_ex = os.path.splitext(filename)
@@ -193,20 +188,28 @@ if __name__ == '__main__':
 
             if (len(T) != 0):
 
-                # (T, X, Y, Pol) = dvsproc.clean_up_events(T, X, Y, Pol, window=1000)
-                frames, fs, _ = dvsproc.gen_dvs_frames(T, X, Y, Pol, num_frames, fs=3)
-                # frames = dvsproc.get_sae_dvs_frames(T, X, Y, Pol, 260, 346, num_frames)
+                (T, X, Y, Pol) = dvsproc.clean_up_events(T, X, Y, Pol, window=1000)
+                # frames, fs, _ = dvsproc.gen_dvs_frames(T, X, Y, Pol, num_frames, fs=3)
+                frames = dvsproc.get_snn_dvs_frames(T, X, Y, Pol, 260, 346, num_frames)
 
                 out = cv2.VideoWriter(os.path.join(path, vid_n + '.avi'), cv2.VideoWriter_fourcc(*'DIVX'), 15, (346, 260))
                  
+                # img_count = 1
                 for frame in frames:
-
-                    cv2.imshow('frame',frame)
-                    if cv2.waitKey(100) & 0xFF == ord('q'):
-                        break
-
+                    # print(frame)
 
                     ray = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+
+
+                    # outputfile = './' + str(img_count) + '.png'
+                    # cv2.imwrite(outputfile, frame)
+
+                    # cv2.imshow('frame',ray)
+                    # if cv2.waitKey(50) & 0xFF == ord('q'):
+                    #     break
+
+                    # img_count += 1
+
                     out.write(ray)
                 out.release()
 
@@ -216,14 +219,9 @@ if __name__ == '__main__':
 
             print("[MESSAGE] Sequence %s is saved" % vid_n)
 
-
-            break
-        break
-
-
     # database.flush()
     # database.close()
-    print("[MESSAGE] dataset is saved to %s" % (save_path))
+    # print("[MESSAGE] dataset is saved to %s" % (save_path))
 
 
 

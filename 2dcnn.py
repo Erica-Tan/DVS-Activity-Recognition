@@ -4,11 +4,10 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
-import videoto3d
+from utils.videoto3d import Videoto3D
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-from keras.datasets import cifar10
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Convolution2D, MaxPooling2D
@@ -99,122 +98,121 @@ def loaddata(video_dir, vid3d, nclass, result_dir):
 
 
 
-def train_model(train_data,train_labels,validation_data,validation_labels):
-  ''' used fully connected layers, SGD optimizer and 
+def load_model(input_shape, nb_classes):
+    ''' used fully connected layers, SGD optimizer and 
       checkpoint to store the best weights'''
 
-  model = Sequential()
-  model.add(Flatten(input_shape=train_data.shape[1:]))
-  model.add(Dense(512, activation='relu'))
-  model.add(Dense(512, activation='relu'))
-  model.add(Dropout(0.5))
-  model.add(Dense(512, activation='relu'))
-  model.add(Dropout(0.5))
-  model.add(Dense(5, activation='softmax'))
-  sgd = SGD(lr=0.00005, decay = 1e-6, momentum=0.9, nesterov=True)
-  model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
-  model.load_weights('video_3_512_VGG_no_drop.h5')
-  callbacks = [ EarlyStopping(monitor='val_loss', patience=10, verbose=0), ModelCheckpoint('video_3_512_VGG_no_drop.h5', monitor='val_loss', save_best_only=True, verbose=0) ]
-  nb_epoch = 500
-  model.fit(train_data,train_labels,validation_data = (validation_data,validation_labels),batch_size=batch_size,nb_epoch=nb_epoch,callbacks=callbacks,shuffle=True,verbose=1)
-  return model
+    # model = Sequential()
+    # model.add(Flatten(input_shape=train_data.shape[1:]))
+    # model.add(Dense(512, activation='relu'))
+    # model.add(Dense(512, activation='relu'))
+    # model.add(Dropout(0.5))
+    # model.add(Dense(512, activation='relu'))
+    # model.add(Dropout(0.5))
+    # model.add(Dense(5, activation='softmax'))
+    # sgd = SGD(lr=0.00005, decay = 1e-6, momentum=0.9, nesterov=True)
+    # model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+    # model.load_weights('video_3_512_VGG_no_drop.h5')
+    # callbacks = [ EarlyStopping(monitor='val_loss', patience=10, verbose=0), ModelCheckpoint('video_3_512_VGG_no_drop.h5', monitor='val_loss', save_best_only=True, verbose=0) ]
+    # nb_epoch = 500
+    # model.fit(train_data,train_labels,validation_data = (validation_data,validation_labels),batch_size=batch_size,nb_epoch=nb_epoch,callbacks=callbacks,shuffle=True,verbose=1)
+
+
+    # define model
+    model = Sequential()
+
+    model.add(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=input_shape))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(32, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Convolution2D(64, 3, 3, border_mode='same'))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(64, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(nb_classes))
+    model.add(Activation('softmax'))
+
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adam',
+                  metrics=['accuracy'])
+    model.summary()
+    # plot_model(model, show_shapes=True, to_file=os.path.join(args.output, 'model.png'))
+
+    return model
 
 def main():
     parser = argparse.ArgumentParser(description='2D convolution')
     parser.add_argument('--batch', type=int, default=2)
     parser.add_argument('--epoch', type=int, default=100)
-    parser.add_argument('--videos', type=str, default='/media/imagr/Data/AEDAT/dataset/ActionRecognitionAVI2',
+    parser.add_argument('--videos', type=str, default='../dataset/ActionRecognitionAVI',
                         help='directory where videos are stored')
     parser.add_argument('--nclass', type=int, default=10)
-    parser.add_argument('--output', type=str, default='./')
+    parser.add_argument('--output', type=str, default='./output')
     args = parser.parse_args()
 
     img_rows, img_cols, frames = 128, 128, 36
 
-    # fname_npz = os.path.join(args.videos, 'dataset_10_36_True.npz')
+    fname_npz = './dataset_{}_{}.npz'.format(
+        args.nclass, "2dcnn")
 
+    if os.path.exists(fname_npz):
+        loadeddata = np.load(fname_npz)
+        X, Y = loadeddata["X"], loadeddata["Y"]
+        X = X.reshape((X.shape[0], img_rows, img_cols, frames))
+    else:
+        vid3d = Videoto3D(img_rows, img_cols, frames)
 
-    nb_classes = args.nclass
-    # if os.path.exists(fname_npz):
-    #     loadeddata = np.load(fname_npz)
-    #     X, Y = loadeddata["X"], loadeddata["Y"]
-    #     X = X.reshape((X.shape[0], img_rows, img_cols, frames))
-    # else:
-    vid3d = videoto3d.Videoto3D(img_rows, img_cols, frames)
+        x, y = loaddata(args.videos, vid3d, args.nclass, args.output)
+        X = x.reshape((x.shape[0], img_rows, img_cols, frames))
+        Y = np_utils.to_categorical(y, args.nclass)
 
-    x, y = loaddata(args.videos, vid3d, args.nclass, args.output)
-    X = x.reshape((x.shape[0], img_rows, img_cols, frames))
-    Y = np_utils.to_categorical(y, nb_classes)
+        X = X.astype('float32')
+        np.savez(fname_npz, X=X, Y=Y)
+        print('Saved dataset to dataset.npz.')
 
-    X = X.astype('float32')
-    # np.savez(fname_npz, X=X, Y=Y)
-    # print('Saved dataset to dataset.npz.')
     print('X_shape:{}\nY_shape:{}'.format(X.shape, Y.shape))
 
-    print('input shape:{}'.format(X.shape[1:]))
 
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.1, random_state=1)
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=1)
 
-    # # exit()
+    # Set up TensorBoard
+    tensorboard = TensorBoard(batch_size=args.batch)
+    scheduler = ReduceLROnPlateau(monitor='val_acc', patience=3, verbose=1, factor=0.5, min_lr=1e-5)
 
+    filepath="./checkpoint/weights-{epoch:02d}.hdf5"
+    checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+    callbacks_list = [tensorboard, scheduler, checkpoint]
 
-    # # define model
-    # model = Sequential()
+    model = load_model(X_train.shape[1:], args.nclass)
 
-    # model.add(Convolution2D(32, 3, 3, border_mode='same',
-    #                         input_shape=X.shape[1:]))
-    # model.add(Activation('relu'))
-    # model.add(Convolution2D(32, 3, 3))
-    # model.add(Activation('relu'))
-    # model.add(MaxPooling2D(pool_size=(2, 2)))
-    # model.add(Dropout(0.25))
+    history = model.fit(X_train, y_train,
+                        batch_size=args.batch,
+                        nb_epoch=args.epoch,
+                        validation_data=(X_val,y_val),
+                        shuffle=True, callbacks=callbacks_list)
 
-    # model.add(Convolution2D(64, 3, 3, border_mode='same'))
-    # model.add(Activation('relu'))
-    # model.add(Convolution2D(64, 3, 3))
-    # model.add(Activation('relu'))
-    # model.add(MaxPooling2D(pool_size=(2, 2)))
-    # model.add(Dropout(0.25))
+    model_json = model.to_json()
+    with open(os.path.join(args.output, 'ucf101cnnmodel.json'), 'w') as json_file:
+        json_file.write(model_json)
+    model.save_weights(os.path.join(args.output, 'ucf101cnnmodel.hd5'))
 
-    # model.add(Flatten())
-    # model.add(Dense(512))
-    # model.add(Activation('relu'))
-    # model.add(Dropout(0.5))
-    # model.add(Dense(nb_classes))
-    # model.add(Activation('softmax'))
-
-    # model.compile(loss='categorical_crossentropy',
-    #               optimizer='adam',
-    #               metrics=['accuracy'])
-    # model.summary()
-    # # plot_model(model, show_shapes=True, to_file=os.path.join(args.output, 'model.png'))
-
-    # X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.1, random_state=1)
-    # X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=1)
-
-
-    # # Set up TensorBoard
-    # tensorboard = TensorBoard(batch_size=args.batch)
-    # scheduler = ReduceLROnPlateau(monitor='val_acc', patience=3, verbose=1, factor=0.5, min_lr=1e-5)
-
-    # filepath="./checkpoint/weights-{epoch:02d}.hdf5"
-    # checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-    # callbacks_list = [tensorboard, scheduler, checkpoint]
-
-    # history = model.fit(X_train, y_train,
-    #                     batch_size=args.batch,
-    #                     nb_epoch=args.epoch,
-    #                     validation_data=(X_val, y_val),
-    #                     shuffle=True, callbacks=callbacks_list)
-    # # model_json = model.to_json()
-    # # with open(os.path.join(args.output, 'ucf101cnnmodel.json'), 'w') as json_file:
-    # #     json_file.write(model_json)
-    # # model.save_weights(os.path.join(args.output, 'ucf101cnnmodel.hd5'))
-
-    # # loss, acc = model.evaluate(X_test, Y_test, verbose=0)
-    # # print('Test loss:', loss)
-    # # print('Test accuracy:', acc)
-    # # plot_history(history, args.output)
-    # # save_history(history, args.output)
+    loss, acc = model.evaluate(X_test, Y_test, verbose=0)
+    print('Test loss:', loss)
+    print('Test accuracy:', acc)
+    plot_history(history, args.output)
+    save_history(history, args.output)
 
 if __name__ == '__main__':
     main()

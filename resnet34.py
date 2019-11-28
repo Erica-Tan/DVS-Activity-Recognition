@@ -58,8 +58,8 @@ def FLAGS():
     parser = argparse.ArgumentParser("""Train classifier using a learnt quantization layer.""")
 
     # training / validation dataset
-    parser.add_argument("--validation_dataset", default="/media/imagr/Data/AEDAT/dataset/ActionRecognitionAVI2Npy/validation")
-    parser.add_argument("--training_dataset", default="/media/imagr/Data/AEDAT/dataset/ActionRecognitionAVI2Npy/training")
+    parser.add_argument("--validation_dataset", default="../dataset/ActionRecognitionAVI2Npy/validation")
+    parser.add_argument("--training_dataset", default="../dataset/ActionRecognitionAVI2Npy/training")
 
     # logging options
     parser.add_argument("--log_dir", default="./logs")
@@ -162,10 +162,6 @@ if __name__ == '__main__':
                 "min_val_loss": min_validation_loss,
                 "iteration": iteration
             }, "./checkpoint/checkpoint_%05d_%.4f.pth" % (iteration, min_validation_loss))
-
-
-
-
 
         sum_accuracy = 0
         sum_loss = 0

@@ -17,9 +17,8 @@ from keras.utils.vis_utils import plot_model
 from sklearn.model_selection import train_test_split
 from keras.callbacks import ReduceLROnPlateau, TensorBoard, ModelCheckpoint
 
-import videoto3d
+from utils.videoto3d import Videoto3D
 from tqdm import tqdm
-
 
 def plot_history(history, result_dir):
     plt.plot(history.history['acc'], marker='.')
@@ -136,10 +135,10 @@ def main():
         description='simple 3D convolution for action recognition')
     parser.add_argument('--batch', type=int, default=4)
     parser.add_argument('--epoch', type=int, default=300)
-    parser.add_argument('--videos', type=str, default='/media/imagr/Data/AEDAT/dataset/ActionRecognitionAVI2/',
+    parser.add_argument('--videos', type=str, default='../dataset/ActionRecognitionAVI',
                         help='directory where videos are stored')
     parser.add_argument('--nclass', type=int, default=10)
-    parser.add_argument('--output', type=str, default='./')
+    parser.add_argument('--output', type=str, default='./output')
     parser.add_argument('--color', type=bool, default=False)
     parser.add_argument('--skip', type=bool, default=True)
     parser.add_argument('--depth', type=int, default=36)
@@ -149,65 +148,58 @@ def main():
 
     channel = 3 if args.color else 1
     
-    # fname_npz = './dataset_{}_{}_{}.npz'.format(
-    #     args.nclass, args.depth, args.skip)
+    fname_npz = './dataset_{}_{}_{}.npz'.format(
+        args.nclass, args.depth, args.skip)
 
-    nb_classes = args.nclass
+    if os.path.exists(fname_npz):
+        loadeddata = np.load(fname_npz)
+        X, Y = loadeddata["X"], loadeddata["Y"]
+    else:
+        vid3d = Videoto3D(img_rows, img_cols, frames)
+        x, y = loaddata(args.videos, vid3d, args.nclass,
+                        args.output, args.color, args.skip)
 
-    # if os.path.exists(fname_npz):
-    #     loadeddata = np.load(fname_npz)
-    #     X, Y = loadeddata["X"], loadeddata["Y"]
-    # else:
-    vid3d = videoto3d.Videoto3D(img_rows, img_cols, frames)
-    x, y = loaddata(args.videos, vid3d, args.nclass,
-                    args.output, args.color, args.skip)
+        X = x.reshape((x.shape[0], img_rows, img_cols, frames, channel))
+        Y = np_utils.to_categorical(y, args.nclass)
+        print(Y)
 
-    X = x.reshape((x.shape[0], img_rows, img_cols, frames, channel))
-    Y = np_utils.to_categorical(y, nb_classes)
-    print(Y)
-
-    X = X.astype('float32')
-    # np.savez(fname_npz, X=X, Y=Y)
-    print('Saved dataset to dataset.npz.')
+        X = X.astype('float32')
+        np.savez(fname_npz, X=X, Y=Y)
+        print('Saved dataset to dataset.npz.')
 
     print('X_shape:{}\nY_shape:{}'.format(X.shape, Y.shape))
 
-    print('input shape:{}'.format(X.shape[1:]))
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.1, random_state=1)
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=1)
 
 
-    # X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.1, random_state=1)
-    # X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=1)
+    # Set up TensorBoard
+    tensorboard = TensorBoard(batch_size=args.batch)
+    scheduler = ReduceLROnPlateau(monitor='val_acc', patience=3, verbose=1, factor=0.5, min_lr=1e-5)
 
-    # print(X_train.shape, X_val.shape)
-
-    
-    # # Set up TensorBoard
-    # tensorboard = TensorBoard(batch_size=args.batch)
-    # scheduler = ReduceLROnPlateau(monitor='val_acc', patience=3, verbose=1, factor=0.5, min_lr=1e-5)
-
-    # filepath="./checkpoint/weights-{epoch:02d}.hdf5"
-    # checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-    # callbacks_list = [tensorboard, scheduler, checkpoint]
+    filepath="./checkpoint/weights-{epoch:02d}.hdf5"
+    checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+    callbacks_list = [tensorboard, scheduler, checkpoint]
 
 
-    # model = load_model(X.shape[1:], nb_classes)
-    # history = model.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=args.batch,
-    #                     epochs=args.epoch, verbose=1, shuffle=True, callbacks=callbacks_list)
+    model = load_model(X.shape[1:], args.nclass)
+    history = model.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=args.batch,
+                        epochs=args.epoch, verbose=1, shuffle=True, callbacks=callbacks_list)
     
 
-    # model.evaluate(X_test, Y_test, verbose=0)
-    # model_json = model.to_json()
-    # if not os.path.isdir(args.output):
-    #     os.makedirs(args.output)
-    # with open(os.path.join(args.output, 'ucf101_3dcnnmodel.json'), 'w') as json_file:
-    #     json_file.write(model_json)
-    # model.save_weights(os.path.join(args.output, 'ucf101_3dcnnmodel.hd5'))
+    model.evaluate(X_test, Y_test, verbose=0)
+    model_json = model.to_json()
+    if not os.path.isdir(args.output):
+        os.makedirs(args.output)
+    with open(os.path.join(args.output, 'ucf101_3dcnnmodel.json'), 'w') as json_file:
+        json_file.write(model_json)
+    model.save_weights(os.path.join(args.output, 'ucf101_3dcnnmodel.hd5'))
 
-    # loss, acc = model.evaluate(X_test, Y_test, verbose=0)
-    # print('Test loss:', loss)
-    # print('Test accuracy:', acc)
-    # plot_history(history, args.output)
-    # save_history(history, args.output)
+    loss, acc = model.evaluate(X_test, Y_test, verbose=0)
+    print('Test loss:', loss)
+    print('Test accuracy:', acc)
+    plot_history(history, args.output)
+    save_history(history, args.output)
 
 
 if __name__ == '__main__':

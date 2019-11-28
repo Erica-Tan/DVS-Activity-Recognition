@@ -208,6 +208,6 @@ if __name__ == '__main__':
 
     print(T.shape, X.shape, Y.shape, data.shape)
 
-    # dvs_snn = SNN()
-    # dvs_snn.spiking(data)
+    dvs_snn = SNN()
+    dvs_snn.spiking(data)
 
