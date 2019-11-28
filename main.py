@@ -58,11 +58,11 @@ def FLAGS():
     parser = argparse.ArgumentParser("""Train classifier using a learnt quantization layer.""")
 
     # training / validation dataset
-    parser.add_argument("--validation_dataset", default="../dataset/ActionRecognitionAVI2Npy/validation")
-    parser.add_argument("--training_dataset", default="../dataset/ActionRecognitionAVI2Npy/training")
+    parser.add_argument("--validation_dataset", default="", required=True)
+    parser.add_argument("--training_dataset", default="", required=True)
 
     # logging options
-    parser.add_argument("--log_dir", default="./logs")
+    parser.add_argument("--log_dir", default="", required=True)
 
     # loader and device options
     parser.add_argument("--device", default="cuda:0")
