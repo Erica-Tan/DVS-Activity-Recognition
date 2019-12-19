@@ -1,10 +1,9 @@
 import argparse
+import os
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import os
-from utils.videoto3d import Videoto3D
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
@@ -15,6 +14,7 @@ from keras.utils import np_utils
 from keras.utils.vis_utils import plot_model
 from keras.callbacks import ReduceLROnPlateau, TensorBoard, ModelCheckpoint
 
+from utils.dataset import Videoto3D
 
 def plot_history(history, result_dir):
     plt.plot(history.history['acc'], marker='.')

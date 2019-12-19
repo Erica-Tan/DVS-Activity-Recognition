@@ -1,12 +1,3 @@
-"""DVS imaging related functions.
-
-This module is written under extreamly helpful codes under:
-https://sourceforge.net/p/jaer/code/HEAD/tree/scripts/python/
-
-Author: Yuhuang Hu
-Email : duguyue100@gmail.com
-"""
-
 import struct
 import os
 import numpy as np

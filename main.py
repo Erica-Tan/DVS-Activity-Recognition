@@ -9,10 +9,9 @@ import cv2
 
 from utils.models import Classifier
 from torch.utils.tensorboard import SummaryWriter
-from utils.loader import Loader
 from utils.loss import cross_entropy_loss_and_accuracy
-from utils.dataset import NCaltech101
-
+from utils.dataset import PAFBDataset
+from utils.loader import Loader
 
 def show(img):
     npimg = np.array(img).transpose((1, 2, 0))
@@ -96,12 +95,11 @@ if __name__ == '__main__':
     flags = FLAGS()
 
     # datasets, add augmentation to training set
-    # training_dataset = NCaltech101(flags.training_dataset, augmentation=True)
-    validation_dataset = NCaltech101(flags.validation_dataset)
-
+    training_dataset = PAFBDataset(flags.training_dataset, augmentation=True)
+    validation_dataset = PAFBDataset(flags.validation_dataset)
 
     # construct loader, handles data streaming to gpu
-    # training_loader = Loader(training_dataset, flags, device=flags.device)
+    training_loader = Loader(training_dataset, flags, device=flags.device)
     validation_loader = Loader(validation_dataset, flags, device=flags.device)
 
     # model, and put to device
@@ -123,7 +121,7 @@ if __name__ == '__main__':
         model = model.eval()
 
         print(f"Validation step [{i:3d}/{flags.num_epochs:3d}]")
-        for events, labels in tqdm.tqdm(validation_loader):
+        for events, labels in tqdm.tqdm(training_loader):
             with torch.no_grad():
                 pred_labels = model(events)
                 loss, accuracy = cross_entropy_loss_and_accuracy(pred_labels, labels)

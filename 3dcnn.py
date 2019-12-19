@@ -1,10 +1,11 @@
 import argparse
 import os
-
 import matplotlib
 matplotlib.use('AGG')
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
+
 from keras.datasets import cifar10
 from keras.layers import (Activation, Conv3D, Dense, Dropout, Flatten,
                           MaxPooling3D)
@@ -17,8 +18,7 @@ from keras.utils.vis_utils import plot_model
 from sklearn.model_selection import train_test_split
 from keras.callbacks import ReduceLROnPlateau, TensorBoard, ModelCheckpoint
 
-from utils.videoto3d import Videoto3D
-from tqdm import tqdm
+from utils.dataset import Videoto3D
 
 def plot_history(history, result_dir):
     plt.plot(history.history['acc'], marker='.')

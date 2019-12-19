@@ -7,9 +7,7 @@ import os
 from utils.loader import Loader
 from utils.loss import cross_entropy_loss_and_accuracy
 from utils.models import Classifier
-from utils.dataset import NCaltech101
-
-
+from utils.dataset import PAFBDataset
 
 def FLAGS():
     parser = argparse.ArgumentParser(
@@ -42,7 +40,7 @@ def FLAGS():
 if __name__ == '__main__':
     flags = FLAGS()
 
-    test_dataset = NCaltech101(flags.test_dataset)
+    test_dataset = PAFBDataset(flags.test_dataset)
 
     # construct loader, responsible for streaming data to gpu
     test_loader = Loader(test_dataset, flags, flags.device)

@@ -8,9 +8,6 @@ import cv2
 import numpy as np
 import argparse
 
-
-
-
 def getDVSeventsDavis(file, numEvents=1e10, startTime=0):
     """ DESCRIPTION: This function reads a given aedat file and converts it into four lists indicating 
                      timestamps, x-coordinates, y-coordinates and polarities of the event stream. 
