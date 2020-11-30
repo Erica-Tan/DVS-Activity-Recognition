@@ -1,0 +1,4 @@
+[core]
+    remote = localremote
+['remote "localremote"']
+    url = /media/imagr/My Passport/my files/dataset/action_recognition
