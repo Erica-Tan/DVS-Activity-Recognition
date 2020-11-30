@@ -1,0 +1,5 @@
+outs:
+- md5: 5c5ac2e38f4b85799bee76df4fb91691.dir
+  size: 2389097687
+  nfiles: 294
+  path: ActionRecognition
