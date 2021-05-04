@@ -20,9 +20,14 @@ Install all dependencies by calling
 ## Training
 Before training, download the DVS Action Recognition Dataset from Github repository https://github.com/MSZTY/PAFBenchmark
     
+Convert the dataset from aedat to npy by calling
+
+    python aedat_to_avi.py
+    python avi_to_npy.py
+
 Then start training by calling
 
-    python main.py --validation_dataset ../dataset/ActionRecognitionAVI2Npy/validation --training_dataset ../dataset/ActionRecognitionAVI2Npy/training --log_dir logs
+    python main.py --validation_dataset ./dataset/ActionRecognitionAVINpy/validation --training_dataset ./dataset/ActionRecognitionAVINpy/training --log_dir ./logs
 
 ### Additional parameters 
 * `--device` controls on which device you want to train
@@ -32,8 +37,3 @@ Then start training by calling
 * `--save_every_n_epochs` save a checkpoint every n epochs.
 * `--batch_size` batch size for training
 
-
-## Testing
-Once trained, the models can be tested by calling the following script:
-
-    python testing.py --test ../dataset/ActionRecognitionAVI2Npy/testing --checkpoint ./checkpoint/checkpoint_00000_2.2948.pth --device cuda:0

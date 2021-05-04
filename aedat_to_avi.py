@@ -130,13 +130,13 @@ if __name__ == '__main__':
     # parse the command line argument
     parser = argparse.ArgumentParser(description='create dataset.')
     parser.add_argument('--data_path', 
-                    default='../dataset/ActionRecognition',
+                    default='./dataset/ActionRecognition',
                     help='The .aedat file dir.')
     # parser.add_argument('--save_path', 
     #                 default='/media/imagr/Data/Projects/AEDAT/dataset/ActionRecognition',
     #                 help='The hdf5 save path.')
     parser.add_argument('--video_path', 
-                default='../dataset/ActionRecognitionAVI',
+                default='./dataset/ActionRecognitionAVI',
                 help='The hdf5 save path.')
     # parser.add_argument('--db_name', 
     #                 default='data',

@@ -9,6 +9,9 @@ from sklearn.model_selection import train_test_split
 import utils.dvsproc
 from utils.dataset import Videoto3D
 
+labellist = ["armcrossing" ,"getup" ,"jumping" ,"kicking" ,"pickingup" ,"sitdown" ,"throwing" ,"turningaround" ,"walking" ,"waving"]
+
+
 def hdf5_to_video(db_path, video_path, num_frames):
     db = h5py.File(db_path, mode="r")
 
@@ -141,11 +144,24 @@ def show(img, count):
     plt.imsave('image_new_' + str(count) +'.jpg',np.transpose(npimg, (1,2,0)) )
 
 
+def save_data(X, y, save_path, type):
+    save_dir = os.path.join(save_path, type)
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    for idx in range(X.shape[0]):
+        path = os.path.join(save_dir, labellist[y[idx]])
+        if not os.path.isdir(path):
+            os.mkdir(path)
+
+        print(os.path.join(path, labellist[y[idx]] +  "_" + str(idx)))
+        np.save(os.path.join(path, labellist[y[idx]] +  "_" + str(idx)), X_train[idx]) 
+
+
 if __name__ == '__main__':
-
-    video_path = "../dataset/ActionRecognitionAVI"
-    save_path = "../dataset/ActionRecognitionAVI3Npy1"
-
+    video_path = "./dataset/ActionRecognitionAVI"
+    save_path = "./dataset/ActionRecognitionAVINpy"
 
     img_rows, img_cols, frames = 128, 128, 36
 
@@ -155,29 +171,7 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1)
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=1)
 
-    labellist = ["armcrossing" ,"getup" ,"jumping" ,"kicking" ,"pickingup" ,"sitdown" ,"throwing" ,"turningaround" ,"walking" ,"waving"]
 
-    for idx in range(X_train.shape[0]):
-        path = os.path.join(save_path, "training", labellist[y_train[idx]])
-        if not os.path.isdir(path):
-            os.mkdir(path)
-
-        print(os.path.join(path, labellist[y_train[idx]] +  "_" + str(idx)))
-        np.save(os.path.join(path, labellist[y_train[idx]] +  "_" + str(idx)), X_train[idx]) 
-
-    for idx in range(X_val.shape[0]):
-        path = os.path.join(save_path, "validation", labellist[y_val[idx]])
-        if not os.path.isdir(path):
-            os.mkdir(path)
-
-        print(os.path.join(path, labellist[y_val[idx]] +  "_" + str(idx)))
-        np.save(os.path.join(path, labellist[y_val[idx]] +  "_" + str(idx)), X_val[idx]) 
-
-    for idx in range(X_test.shape[0]):
-        path = os.path.join(save_path, "testing", labellist[y_test[idx]])
-        if not os.path.isdir(path):
-            os.mkdir(path)
-
-        print(os.path.join(path, labellist[y_test[idx]] +  "_" + str(idx)))
-        np.save(os.path.join(path, labellist[y_test[idx]] +  "_" + str(idx)), X_test[idx]) 
-
+    save_data(X_train, y_train, save_path, "training")
+    save_data(X_val, y_val, save_path, "validation")
+    save_data(X_test, y_test, save_path, "testing")
