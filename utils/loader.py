@@ -1,7 +1,4 @@
 import torch
-import numpy as np
-
-from torch.utils.data.dataloader import default_collate
 
 class Loader:
     def __init__(self, dataset, flags, device):

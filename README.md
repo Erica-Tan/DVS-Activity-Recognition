@@ -4,7 +4,6 @@
 
 * Python 3.7
 * virtualenv
-* cuda 10
 
 ## Dependencies
 Create a virtual environment with `python3.7` and activate it

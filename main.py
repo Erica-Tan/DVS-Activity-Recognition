@@ -13,6 +13,7 @@ from utils.loss import cross_entropy_loss_and_accuracy
 from utils.dataset import PAFBDataset
 from utils.loader import Loader
 
+
 def show(img):
     npimg = np.array(img).transpose((1, 2, 0))
     # npimg = np.array(img)
@@ -25,7 +26,8 @@ def percentile(t, q):
     B, C, H, W = t.shape
     k = 1 + round(.01 * float(q) * (C * H * W - 1))
     result = t.view(B, -1).kthvalue(k).values
-    return result[:,None,None,None]
+    return result[:, None, None, None]
+
 
 def create_image(representation):
     B, C, H, W = representation.shape
@@ -37,7 +39,6 @@ def create_image(representation):
     # for frame in representation[0][0]:
     #     show(frame)
 
-
     representation = representation.view(B, 3, C // 3, H, W).sum(2)
 
     # do robust min max norm
@@ -45,9 +46,9 @@ def create_image(representation):
     robust_max_vals = percentile(representation, 99)
     robust_min_vals = percentile(representation, 1)
 
-    representation = (representation - robust_min_vals)/(robust_max_vals - robust_min_vals)
-    representation = torch.clamp(255*representation, 0, 255).byte()
- 
+    representation = (representation - robust_min_vals) / (robust_max_vals - robust_min_vals)
+    representation = torch.clamp(255 * representation, 0, 255).byte()
+
     representation = torchvision.utils.make_grid(representation)
 
     return representation
@@ -59,6 +60,8 @@ def FLAGS():
     # training / validation dataset
     parser.add_argument("--validation_dataset", default="", required=True)
     parser.add_argument("--training_dataset", default="", required=True)
+    parser.add_argument('--videos', type=str, default='./dataset/ActionRecognitionAVI',
+                        help='directory where videos are stored')
 
     # logging options
     parser.add_argument("--log_dir", default="", required=True)
@@ -69,13 +72,14 @@ def FLAGS():
     parser.add_argument("--pin_memory", type=bool, default=True)
     parser.add_argument("--batch_size", type=int, default=4)
 
-    parser.add_argument("--num_epochs", type=int, default=5)
+    parser.add_argument("--num_epochs", type=int, default=10)
     parser.add_argument("--save_every_n_epochs", type=int, default=5)
 
     flags = parser.parse_args()
 
     assert os.path.isdir(dirname(flags.log_dir)), f"Log directory root {dirname(flags.log_dir)} not found."
-    assert os.path.isdir(flags.validation_dataset), f"Validation dataset directory {flags.validation_dataset} not found."
+    assert os.path.isdir(
+        flags.validation_dataset), f"Validation dataset directory {flags.validation_dataset} not found."
     assert os.path.isdir(flags.training_dataset), f"Training dataset directory {flags.training_dataset} not found."
 
     print(f"----------------------------\n"
@@ -116,57 +120,12 @@ if __name__ == '__main__':
     min_validation_loss = 1000
 
     for i in range(flags.num_epochs):
-        sum_accuracy = 0
-        sum_loss = 0
-        model = model.eval()
-
-        print(f"Validation step [{i:3d}/{flags.num_epochs:3d}]")
-        for events, labels in tqdm.tqdm(training_loader):
-            with torch.no_grad():
-                pred_labels = model(events)
-                loss, accuracy = cross_entropy_loss_and_accuracy(pred_labels, labels)
-
-            sum_accuracy += accuracy
-            sum_loss += loss
-
-
-        validation_loss = sum_loss.item() / len(validation_loader)
-        validation_accuracy = sum_accuracy.item() / len(validation_loader)
-
-        writer.add_scalar("validation/accuracy", validation_accuracy, iteration)
-        writer.add_scalar("validation/loss", validation_loss, iteration)
-
-        # visualize representation
-        representation_vizualization = create_image(events)
-        writer.add_image("validation/representation", representation_vizualization, iteration)
-
-        print(f"Validation Loss {validation_loss:.4f}  Accuracy {validation_accuracy:.4f}")
-
-        if validation_loss < min_validation_loss:
-            min_validation_loss = validation_loss
-            state_dict = model.state_dict()
-
-            torch.save({
-                "state_dict": state_dict,
-                "min_val_loss": min_validation_loss,
-                "iteration": iteration
-            }, "./checkpoint/model_best.pth")
-            print("New best at ", validation_loss)
-
-        if i % flags.save_every_n_epochs == 0:
-            state_dict = model.state_dict()
-            torch.save({
-                "state_dict": state_dict,
-                "min_val_loss": min_validation_loss,
-                "iteration": iteration
-            }, "./checkpoint/checkpoint_%05d_%.4f.pth" % (iteration, min_validation_loss))
-
+        print(f"Training step [{i:3d}/{flags.num_epochs:3d}]")
         sum_accuracy = 0
         sum_loss = 0
 
         model = model.train()
-        print(f"Training step [{i:3d}/{flags.num_epochs:3d}]")
-        for events, labels in tqdm.tqdm(validation_loader):
+        for events, labels in tqdm.tqdm(training_loader):
             optimizer.zero_grad()
 
             pred_labels = model(events)
@@ -184,8 +143,8 @@ if __name__ == '__main__':
         if i % 10 == 9:
             lr_scheduler.step()
 
-        training_loss = sum_loss.item() / len(validation_loader)
-        training_accuracy = sum_accuracy.item() / len(validation_loader)
+        training_loss = sum_loss.item() / len(training_loader)
+        training_accuracy = sum_accuracy.item() / len(training_loader)
         print(f"Training Iteration {iteration:5d}  Loss {training_loss:.4f}  Accuracy {training_accuracy:.4f}")
 
         writer.add_scalar("training/accuracy", training_accuracy, iteration)
@@ -194,3 +153,47 @@ if __name__ == '__main__':
         representation_vizualization = create_image(events)
         writer.add_image("training/representation", representation_vizualization, iteration)
 
+        if i % 5 == 0:
+            print(f"Validation step [{i:3d}/{flags.num_epochs:3d}]")
+            sum_accuracy = 0
+            sum_loss = 0
+            model = model.eval()
+
+            for events, labels in tqdm.tqdm(validation_loader):
+                with torch.no_grad():
+                    pred_labels = model(events)
+                    loss, accuracy = cross_entropy_loss_and_accuracy(pred_labels, labels)
+
+                sum_accuracy += accuracy
+                sum_loss += loss
+
+            validation_loss = sum_loss.item() / len(validation_loader)
+            validation_accuracy = sum_accuracy.item() / len(validation_loader)
+
+            writer.add_scalar("validation/accuracy", validation_accuracy, iteration)
+            writer.add_scalar("validation/loss", validation_loss, iteration)
+
+            # visualize representation
+            representation_vizualization = create_image(events)
+            writer.add_image("validation/representation", representation_vizualization, iteration)
+
+            print(f"Validation Loss {validation_loss:.4f}  Accuracy {validation_accuracy:.4f}")
+
+            if validation_loss < min_validation_loss:
+                min_validation_loss = validation_loss
+                state_dict = model.state_dict()
+
+                torch.save({
+                    "state_dict": state_dict,
+                    "min_val_loss": min_validation_loss,
+                    "iteration": iteration
+                }, "./checkpoint/model_best.pth")
+                print("New best at ", validation_loss)
+
+        if i % flags.save_every_n_epochs == 0:
+            state_dict = model.state_dict()
+            torch.save({
+                "state_dict": state_dict,
+                "min_val_loss": min_validation_loss,
+                "iteration": iteration
+            }, "./checkpoint/checkpoint_%05d_%.4f.pth" % (iteration, min_validation_loss))

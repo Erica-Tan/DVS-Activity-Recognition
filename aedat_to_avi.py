@@ -126,27 +126,26 @@ def save_recording(record_name, record_data,
 
 
 if __name__ == '__main__':
-
     # parse the command line argument
     parser = argparse.ArgumentParser(description='create dataset.')
     parser.add_argument('--data_path', 
                     default='./dataset/ActionRecognition',
                     help='The .aedat file dir.')
-    # parser.add_argument('--save_path', 
-    #                 default='/media/imagr/Data/Projects/AEDAT/dataset/ActionRecognition',
-    #                 help='The hdf5 save path.')
+    parser.add_argument('--save_path',
+                    default='./dataset/ActionRecognition',
+                    help='The hdf5 save path.')
     parser.add_argument('--video_path', 
                 default='./dataset/ActionRecognitionAVI',
                 help='The hdf5 save path.')
-    # parser.add_argument('--db_name', 
-    #                 default='data',
-    #                 help='The hdf5 file name.')
+    parser.add_argument('--db_name',
+                    default='data',
+                    help='The hdf5 file name.')
     args = parser.parse_args()
 
     data_path = args.data_path
-    # save_path = args.save_path
+    save_path = args.save_path
     video_path = args.video_path
-    # db_name = args.db_name
+    db_name = args.db_name
 
     num_frames = 36
 

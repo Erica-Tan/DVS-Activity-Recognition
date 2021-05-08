@@ -6,10 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-from keras.datasets import cifar10
 from keras.layers import (Activation, Conv3D, Dense, Dropout, Flatten,
                           MaxPooling3D)
-from keras.layers.advanced_activations import LeakyReLU
 from keras.losses import categorical_crossentropy
 from keras.models import Sequential
 from keras.optimizers import Adam
@@ -18,7 +16,8 @@ from keras.utils.vis_utils import plot_model
 from sklearn.model_selection import train_test_split
 from keras.callbacks import ReduceLROnPlateau, TensorBoard, ModelCheckpoint
 
-from utils.dataset import Videoto3D
+from utils.dataset import video3d
+
 
 def plot_history(history, result_dir):
     plt.plot(history.history['acc'], marker='.')
@@ -56,7 +55,7 @@ def save_history(history, result_dir):
                 i, loss[i], acc[i], val_loss[i], val_acc[i]))
 
 
-def loaddata(video_dir, vid3d, nclass, result_dir, color=False, skip=True):
+def loaddata(video_dir, nclass, img_rows, img_cols, frames, color=False):
     files = os.listdir(video_dir)
     X = []
     labels = []
@@ -70,7 +69,7 @@ def loaddata(video_dir, vid3d, nclass, result_dir, color=False, skip=True):
 
             name = os.path.join(video_dir, label, video)
 
-            framearray = vid3d.video3d(name, color=color, skip=skip)
+            framearray = video3d(name, img_rows, img_cols, color=color)
 
             if len(framearray) != 0:
                 X.append(framearray)
@@ -82,12 +81,12 @@ def loaddata(video_dir, vid3d, nclass, result_dir, color=False, skip=True):
 
                 labels.append(label)
 
-                print(name, label)
+                # print(name, label)
 
     pbar.close()
-    with open(os.path.join(result_dir, 'classes.txt'), 'w') as fp:
-        for i in range(len(labellist)):
-            fp.write('{}\n'.format(labellist[i]))
+    # with open(os.path.join(result_dir, 'classes.txt'), 'w') as fp:
+    #     for i in range(len(labellist)):
+    #         fp.write('{}\n'.format(labellist[i]))
 
     for num, label in enumerate(labellist):
         for i in range(len(labels)):
@@ -103,18 +102,18 @@ def loaddata(video_dir, vid3d, nclass, result_dir, color=False, skip=True):
 def load_model(input_shape, nb_classes):
         # Define model
     model = Sequential()
-    model.add(Conv3D(32, kernel_size=(3, 3, 3), input_shape=input_shape, border_mode='same'))
+    model.add(Conv3D(32, kernel_size=(3, 3, 3), input_shape=input_shape, padding='same'))
     model.add(Activation('relu'))
-    model.add(Conv3D(32, kernel_size=(3, 3, 3), border_mode='same'))
+    model.add(Conv3D(32, kernel_size=(3, 3, 3), padding='same'))
     model.add(Activation('softmax'))
-    model.add(MaxPooling3D(pool_size=(3, 3, 3), border_mode='same'))
+    model.add(MaxPooling3D(pool_size=(3, 3, 3), padding='same'))
     model.add(Dropout(0.25))
 
-    model.add(Conv3D(64, kernel_size=(3, 3, 3), border_mode='same'))
+    model.add(Conv3D(64, kernel_size=(3, 3, 3), padding='same'))
     model.add(Activation('relu'))
-    model.add(Conv3D(64, kernel_size=(3, 3, 3), border_mode='same'))
+    model.add(Conv3D(64, kernel_size=(3, 3, 3), padding='same'))
     model.add(Activation('softmax'))
-    model.add(MaxPooling3D(pool_size=(3, 3, 3), border_mode='same'))
+    model.add(MaxPooling3D(pool_size=(3, 3, 3), padding='same'))
     model.add(Dropout(0.25))
 
     model.add(Flatten())
@@ -134,13 +133,12 @@ def main():
     parser = argparse.ArgumentParser(
         description='simple 3D convolution for action recognition')
     parser.add_argument('--batch', type=int, default=4)
-    parser.add_argument('--epoch', type=int, default=300)
-    parser.add_argument('--videos', type=str, default='../dataset/ActionRecognitionAVI',
+    parser.add_argument('--epoch', type=int, default=3)
+    parser.add_argument('--videos', type=str, default='./dataset/ActionRecognitionAVI',
                         help='directory where videos are stored')
     parser.add_argument('--nclass', type=int, default=10)
     parser.add_argument('--output', type=str, default='./output')
     parser.add_argument('--color', type=bool, default=False)
-    parser.add_argument('--skip', type=bool, default=True)
     parser.add_argument('--depth', type=int, default=36)
     args = parser.parse_args()
     
@@ -148,21 +146,18 @@ def main():
 
     channel = 3 if args.color else 1
     
-    fname_npz = './dataset_{}_{}_{}.npz'.format(
-        args.nclass, args.depth, args.skip)
+    fname_npz = './dataset/dataset_{}_{}.npz'.format(
+        args.nclass, "3dcnn")
 
     if os.path.exists(fname_npz):
         loadeddata = np.load(fname_npz)
         X, Y = loadeddata["X"], loadeddata["Y"]
     else:
-        vid3d = Videoto3D(img_rows, img_cols, frames)
-        x, y = loaddata(args.videos, vid3d, args.nclass,
-                        args.output, args.color, args.skip)
+        x, y = loaddata(args.videos, args.nclass,
+                        img_rows, img_cols, frames, args.color)
 
         X = x.reshape((x.shape[0], img_rows, img_cols, frames, channel))
         Y = np_utils.to_categorical(y, args.nclass)
-        print(Y)
-
         X = X.astype('float32')
         np.savez(fname_npz, X=X, Y=Y)
         print('Saved dataset to dataset.npz.')
@@ -181,21 +176,21 @@ def main():
     checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
     callbacks_list = [tensorboard, scheduler, checkpoint]
 
-
     model = load_model(X.shape[1:], args.nclass)
+
     history = model.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=args.batch,
                         epochs=args.epoch, verbose=1, shuffle=True, callbacks=callbacks_list)
-    
 
-    model.evaluate(X_test, Y_test, verbose=0)
+
+    model.evaluate(X_test, y_test, verbose=0)
     model_json = model.to_json()
     if not os.path.isdir(args.output):
         os.makedirs(args.output)
-    with open(os.path.join(args.output, 'ucf101_3dcnnmodel.json'), 'w') as json_file:
+    with open(os.path.join(args.output, 'PAFBenchmark_3dcnn_model.json'), 'w') as json_file:
         json_file.write(model_json)
-    model.save_weights(os.path.join(args.output, 'ucf101_3dcnnmodel.hd5'))
+    model.save_weights(os.path.join(args.output, 'PAFBenchmark_3dcnn_model.hd5'))
 
-    loss, acc = model.evaluate(X_test, Y_test, verbose=0)
+    loss, acc = model.evaluate(X_test, y_test, verbose=0)
     print('Test loss:', loss)
     print('Test accuracy:', acc)
     plot_history(history, args.output)
