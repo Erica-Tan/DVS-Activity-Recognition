@@ -31,8 +31,12 @@ Then start training by calling
 ### Additional parameters 
 * `--device` controls on which device you want to train
 * `--pin_memory` wether to pin memory or not
-* `--num_worker` how many threads to use to load data
+* `--num_worker` how many threads to use to load dat
 * `--num_epochs` number of epochs to train
 * `--save_every_n_epochs` save a checkpoint every n epochs.
 * `--batch_size` batch size for training
 
+## Testing
+Once trained, the models can be tested by calling the following script:
+
+    python testing.py --test ./dataset/ActionRecognitionAVINpy/testing --checkpoint ./checkpoint/model_best.pth --device cuda:0

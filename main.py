@@ -60,8 +60,6 @@ def FLAGS():
     # training / validation dataset
     parser.add_argument("--validation_dataset", default="", required=True)
     parser.add_argument("--training_dataset", default="", required=True)
-    parser.add_argument('--videos', type=str, default='./dataset/ActionRecognitionAVI',
-                        help='directory where videos are stored')
 
     # logging options
     parser.add_argument("--log_dir", default="", required=True)
