@@ -26,7 +26,7 @@ Convert the dataset from aedat to npy by calling
 
 Then start training by calling
 
-    python main.py --validation_dataset ./dataset/ActionRecognitionAVINpy/validation --training_dataset ./dataset/ActionRecognitionAVINpy/training --log_dir ./logs
+    python train.py --validation_dataset ./dataset/ActionRecognitionAVINpy/validation --training_dataset ./dataset/ActionRecognitionAVINpy/training --log_dir ./logs
 
 ### Additional parameters 
 * `--device` controls on which device you want to train
