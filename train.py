@@ -64,7 +64,6 @@ def main(args):
     sum_accuracy = 0
     sum_loss = 0
 
-
     for epoch in range(args.num_epochs):
         for phase in ["train", "valid"]:
             if phase == "train":
@@ -72,10 +71,8 @@ def main(args):
             else:
                 model.eval()
 
-
             if phase == "valid" and epoch % 5 != 0:
                 continue
-
 
             for events, labels in tqdm(loaders[phase]):
                 optimizer.zero_grad()
@@ -93,7 +90,6 @@ def main(args):
 
                         iteration += 1
 
-
             if phase == "valid" and loss < min_validation_loss:
                 min_validation_loss = loss
                 state_dict = model.state_dict()
@@ -104,9 +100,6 @@ def main(args):
                     "iteration": iteration
                 }, "./checkpoint/model_best.pth")
                 print("New validation best at ", loss)
-
-
-
 
             loss = sum_loss / len(loaders[phase])
             accuracy = sum_accuracy / len(loaders[phase])
@@ -125,10 +118,8 @@ def main(args):
             sum_accuracy = 0
             sum_loss = 0
 
-
         if phase == "train" and epoch % 10 == 0:
             lr_scheduler.step()
-
 
         if epoch % args.save_every_n_epochs == 0:
             state_dict = model.state_dict()
@@ -137,7 +128,6 @@ def main(args):
                 "min_val_loss": min_validation_loss,
                 "iteration": iteration
             }, "./checkpoint/checkpoint_%05d_%.4f.pth" % (iteration, min_validation_loss))
-
 
 
 if __name__ == '__main__':
