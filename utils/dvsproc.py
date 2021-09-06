@@ -588,3 +588,26 @@ def get_snn_dvs_frames(T, X, Y, Pol, width, height, num_frames):
 
     return dvs_snn.frames
 
+def video3d(filename, width, height, color=False):
+    cap = cv2.VideoCapture(filename)
+    # nframe = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+
+    framearray = []
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+
+        if ret == True:
+
+            if color:
+                framearray.append(frame)
+            else:
+                frame = cv2.resize(frame, (height, width))
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+                framearray.append(frame)
+        else:
+            break
+
+    cap.release()
+
+    return np.array(framearray)

@@ -7,7 +7,8 @@ import numpy as np
 from tqdm import tqdm
 import cv2
 
-from utils.models import Classifier
+from utils.resnet34_pretrained import ResNet34
+from utils.resnet import ResNet101
 from torch.utils.tensorboard import SummaryWriter
 from utils.loss import cross_entropy_loss_and_accuracy
 from utils.dataset import PAFBDataset
@@ -50,7 +51,7 @@ def main(args):
     loaders = {"train": training_loader, "valid": validation_loader}
 
     # model, and put to device
-    model = Classifier()
+    model = ResNet101(img_channel=36, num_classes=10)
     model = model.to(args.device)
 
     # optimizer and lr scheduler

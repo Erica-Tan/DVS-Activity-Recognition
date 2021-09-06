@@ -6,7 +6,7 @@ import os
 
 from utils.loader import Loader
 from utils.loss import cross_entropy_loss_and_accuracy
-from utils.models import Classifier
+from utils.resnet34_pretrained import ResNet34
 from utils.dataset import PAFBDataset
 
 def FLAGS():
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     test_loader = Loader(test_dataset, flags, flags.device)
 
     # model, load and put to device
-    model = Classifier()
+    model = ResNet34()
     ckpt = torch.load(flags.checkpoint)
     model.load_state_dict(ckpt["state_dict"])
     model = model.to(flags.device)
@@ -58,7 +58,10 @@ if __name__ == '__main__':
     print("Test step")
     for events, labels in tqdm.tqdm(test_loader):
         with torch.no_grad():
+            print(events.shape)
             pred_labels = model(events)
+            print(pred_labels.shape)
+
             loss, accuracy = cross_entropy_loss_and_accuracy(pred_labels, labels)
 
         sum_accuracy += accuracy

@@ -1,8 +1,10 @@
+import torch
 import torch.nn as nn
+from torchsummary import summary
 from torchvision.models.resnet import resnet34
 
 
-class Classifier(nn.Module):
+class ResNet34(nn.Module):
     def __init__(self,
                  num_classes=10,
                  pretrained=True,
@@ -18,3 +20,16 @@ class Classifier(nn.Module):
     def forward(self, x):
         pred = self.classifier.forward(x)
         return pred
+
+
+def test():
+    x = torch.randn((16, 36, 128, 128))
+    model = ResNet34()
+    preds = model(x)
+    print(preds.shape)
+    
+    summary(model, input_size=(36, 128, 128), device='cpu')
+
+
+if __name__ == "__main__":
+    test()
