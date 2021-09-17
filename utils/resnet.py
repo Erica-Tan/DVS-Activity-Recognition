@@ -1,15 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 From scratch implementation of the famous ResNet models.
-The intuition for ResNet is simple and clear, but to code
-it didn't feel super clear at first, even when reading Pytorch own
-implementation. 
-
-Video explanation: 
-Got any questions leave a comment on youtube :)
-
-Programmed by Aladdin Persson <aladdin.persson at hotmail dot com>
-*    2020-04-12 Initial coding
 """
 
 import torch
