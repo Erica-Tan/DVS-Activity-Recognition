@@ -1,6 +1,6 @@
 import os
-import numpy as np
 import cv2
+import numpy as np
 
 from torch.utils.data import DataLoader, random_split
 
@@ -17,7 +17,7 @@ class PAFBDataset:
         self.augmentation = augmentation
 
         for i, c in enumerate(self.classes):
-            new_files = [join(root, c, f) for f in listdir(join(root, c))]
+            new_files = [os.path.join(root, c, f) for f in os.listdir(os.path.join(root, c))]
             self.files += new_files
             self.labels += [i] * len(new_files)
 
@@ -51,25 +51,20 @@ class PAFBDatasetWithPrep:
 
         for i, c in enumerate(self.classes):
             for f in os.listdir(os.path.join(root, c)):
-                print(os.path.join(root, c, f))
 
                 record_data = dvsproc.loadaerdat(os.path.join(root, c, f))
                 T, X, Y, Pol = record_data
 
                 framearray = []
-                if (len(T) != 0):
+                if len(T) != 0:
                     (T, X, Y, Pol) = dvsproc.clean_up_events(T, X, Y, Pol, window=1000)
                     frames, fs, _ = dvsproc.gen_dvs_frames(T, X, Y, Pol, self.num_frames, fs=3)
                     # frames = dvsproc.get_snn_dvs_frames(T, X, Y, Pol, 260, 346, self.num_frames)
+                    # frames = get_sae_dvs_frames(T, X, Y, Pol, 260, 346, nself.um_frames)
 
-                    # i = 0
                     for frame in frames:
-                        # print(type(frame), frame.shape)
                         frame = cv2.resize(frame, (self.img_rows, self.img_cols))
-                        # cv2.imwrite(os.path.join("./", "%d-%d.png" % (label, i)), frame)
                         framearray.append(frame)
-
-                        # i += 1
 
                     self.events.append(np.array(framearray))
                     self.labels.append(i)
@@ -104,7 +99,6 @@ def test():
 
     for batch_idx, (x, y_true) in enumerate(loader):
         print(x.shape, y_true.shape)
-
         break
 
 

@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from utils.dataset import video3d
+from utils.dvsproc import video3d, gen_dvs_frames
 
 labellist = ["armcrossing", "getup", "jumping", "kicking", "pickingup", "sitdown", "throwing", "turningaround",
              "walking", "waving"]
@@ -32,7 +32,7 @@ def hdf5_to_video(db_path, video_path, num_frames):
             if (len(T) != 0):
 
                 # (T, X, Y, Pol) = dvsproc.clean_up_events(T, X, Y, Pol, window=1000)
-                frames, fs, _ = dvsproc.gen_dvs_frames(T, X, Y, Pol, num_frames, fs=3)
+                frames, fs, _ = gen_dvs_frames(T, X, Y, Pol, num_frames, fs=3)
 
                 # frames = dvsproc.get_sae_dvs_frames(T, X, Y, Pol, 260, 346, num_frames)
 

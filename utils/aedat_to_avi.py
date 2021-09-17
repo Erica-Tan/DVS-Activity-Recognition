@@ -1,12 +1,9 @@
-import sys
 import os
-import math
 import cv2
 import numpy as np
 import argparse
 import utils.dvsproc as dvsproc
 import h5py
-import glob
 
 
 def init_database(db_name, save_path):

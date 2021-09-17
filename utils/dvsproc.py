@@ -7,6 +7,8 @@ https://github.com/CrystalMiaoshu/PAFBenchmark/
 import math
 import struct
 import os
+
+import cv2
 import numpy as np
 
 from utils.snn import SNN
@@ -514,17 +516,15 @@ def gen_dvs_frames(timestamps, xaddr, yaddr, pol, num_frames, fs=3,
             k += 1
             diff = int(timestamps[k]-timestamps[base])
 
-
         base = k-1
         frames.append((((frame+fs)/float(2*fs))*255).astype(np.uint8))
-        
 
     return frames, fs, ts
 
 
-
 def get_sae_dvs_frames(T, X, Y, Pol, width, height, num_frames):
     """
+    SAE(Surface of Active Events) encoding method
     source https://github.com/CrystalMiaoshu/PAFBenchmark/blob/master/sae.py
     """
     T = T.reshape((-1, 1))
@@ -535,7 +535,6 @@ def get_sae_dvs_frames(T, X, Y, Pol, width, height, num_frames):
     # step_time = 10000 #The cumulative time of a frame
 
     step_time = math.ceil((T[-1]-T[0])/(num_frames+1))
-
 
     start_idx = 0
     end_idx = 0
@@ -565,12 +564,12 @@ def get_sae_dvs_frames(T, X, Y, Pol, width, height, num_frames):
         end_time += step_time
         start_idx = end_idx
 
-
     return frames
 
 
 def get_snn_dvs_frames(T, X, Y, Pol, width, height, num_frames):
     """
+    LIF(Leaky Integrate-and-Fire) encoding method
     source https://github.com/CrystalMiaoshu/PAFBenchmark/blob/master/snn.py
     """
     T = np.array(T).reshape((-1, 1))
@@ -584,9 +583,10 @@ def get_snn_dvs_frames(T, X, Y, Pol, width, height, num_frames):
     dvs_snn = SNN(width, height, step_time)
     dvs_snn.spiking(data)
 
-    print(step_time, len(dvs_snn.frames))
+    # print(step_time, len(dvs_snn.frames))
 
     return dvs_snn.frames
+
 
 def video3d(filename, width, height, color=False):
     cap = cv2.VideoCapture(filename)
