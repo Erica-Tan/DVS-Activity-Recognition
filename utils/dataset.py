@@ -10,6 +10,38 @@ import utils.dvsproc as dvsproc
 class PAFBDataset:
     def __init__(self, root, augmentation=False):
         self.classes = os.listdir(root)
+
+        self.files = []
+        self.labels = []
+
+        self.augmentation = augmentation
+
+        for i, c in enumerate(self.classes):
+            new_files = [join(root, c, f) for f in listdir(join(root, c))]
+            self.files += new_files
+            self.labels += [i] * len(new_files)
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, idx):
+        """
+        returns events and label, loading events from aedat
+        :param idx:
+        :return: x,y,t,p,  label
+        """
+
+        label = self.labels[idx]
+        f = self.files[idx]
+
+        events = np.load(f).astype(np.float32)/float(255)
+
+        return events, label
+
+
+class PAFBDatasetWithPrep:
+    def __init__(self, root, augmentation=False):
+        self.classes = os.listdir(root)
         self.img_rows, self.img_cols, self.num_frames = 128, 128, 36
 
         self.events = []
@@ -42,8 +74,6 @@ class PAFBDataset:
                     self.events.append(np.array(framearray))
                     self.labels.append(i)
 
-
-
     def __len__(self):
         return len(self.events)
 
@@ -58,8 +88,9 @@ class PAFBDataset:
 
         return event.astype(np.float32)/float(255), label
 
+
 def test():
-    data = PAFBDataset('./dataset/test/')
+    data = PAFBDatasetWithPrep('./dataset/test/')
 
     test_size = int(0.2 * len(data))
     train_size = len(data) - test_size
@@ -75,6 +106,7 @@ def test():
         print(x.shape, y_true.shape)
 
         break
+
 
 if __name__ == "__main__":
     test()

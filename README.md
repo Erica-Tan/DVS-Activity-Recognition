@@ -16,6 +16,9 @@ Install all dependencies by calling
     pip install -r requirements.txt
 
 
+## Dataset
+DVS Action Recognition Dataset from Github repository https://github.com/MSZTY/PAFBenchmark
+
 ## Training
 Start training by calling
 
